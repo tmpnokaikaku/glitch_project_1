@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebSocket Messaging</title>
+</head>
+<body>
+  <h1>WebSocket Messaging</h1>
+  <input type="text" id="messageBox" placeholder="Enter your message here">
+  <button id="sendBtn">Send Message</button>
+  <div id="messages"></div>
+
+  <script>
+    var ws = new WebSocket('wss://ls-research-project-1.glitch.me/websocket');
+    var sendBtn = document.getElementById('sendBtn');
+    var messageBox = document.getElementById('messageBox');
+    var messages = document.getElementById('messages');
+
+    ws.onopen = function() {
+      console.log('WebSocket connection established');
+    };
+
+    ws.onmessage = function(event) {
+      console.log('Received message:', event.data);
+      messages.innerHTML += '<p>' + event.data + '</p>';
+    };
+
+    ws.onerror = function(error) {
+      console.error('WebSocket error:', error);
+    };
+
+    sendBtn.onclick = function() {
+      var message = messageBox.value;
+      if (message) {
+        ws.send(message);
+        console.log('Sent message:', message);
+        messageBox.value = ''; // Clear the input field
+      }
+    };
+
+    // Also allow sending the message with the Enter key
+    messageBox.addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        sendBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>
