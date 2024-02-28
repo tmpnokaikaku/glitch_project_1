@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <title>カメラ映像を送信</title>
+    <style>
+        #camera-stream {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <h2>>カメラ映像を送信</h2>
+    <video id="camera-stream" autoplay playsinline></video>
+    <script>
+        const videoElement = document.getElementById('camera-stream');
+        let mediaRecorder;
+        let webSocket;
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                videoElement.srcObject = stream;
+                // WebSocket接続の開始
+                startWebSocket();
+                // MediaRecorderの設定
+                setupMediaRecorder(stream);
+            } catch (error) {
+                console.error('カメラのアクセスに失敗しました: ', error);
+            }
+        }
+
+        function startWebSocket() {
+            // WebSocketサーバーのアドレスに接続
+            webSocket = new WebSocket('wss://ls-research-project-1.glitch.me/websocket3');
+            webSocket.onopen = function(event) {
+                console.log('WebSocket接続が開かれました。');
+                // サーバーにステータスを送信
+                webSocket.send(JSON.stringify({ status: 'sender' }));
+            };
+            webSocket.onerror = function(error) {
+                console.error('WebSocketエラー: ', error);
+            };
+        }
+
+        function setupMediaRecorder(stream) {
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+            // データが利用可能になったらWebSocket経由でサーバーに送信
+            mediaRecorder.ondataavailable = function(event) {
+                if (event.data.size > 0 && webSocket.readyState === WebSocket.OPEN) {
+                    webSocket.send(event.data);
+                }
+            };
+            // 適当な時間間隔で映像データを送信するように設定
+            mediaRecorder.start(100); // 100ミリ秒ごとにデータを送信
+        }
+
+        startCamera();
+    </script>
+</body>
+</html>
